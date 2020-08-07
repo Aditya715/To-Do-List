@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}
+    Home
+{% endblock %}
+{%block content %}
+    {% if queryset %}
+        <table id="view_data" class="table table-bordered">
+            <thead>
+                <th>S/N</th>
+                <th>Task</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </thead>
+            <tbody>
+                {% for query in queryset %}
+                    <tr class="{{ query.status }}" id="tr{{ query.id }}">
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ query.task }}</td>
+
+                        <td>{{ query.schedule }}</td>
+                        <td>{{ query.status }}</td>
+                        <td>
+                            {% if query.status == 'open' %}
+                                <button id="query{{ query.id }}" type="button" class="completeMe btn btn-outline-success">Complete</button>
+                                <script>
+                                    var querySchedule = new Date('{{ query.schedule|safe }}');
+                                    var nowTime = new Date();
+                                    if (querySchedule < nowTime) {
+                                        $('#' + 'tr'+ "{{ query.id }}").removeClass().addClass('expired');
+                                        $('#query' + "{{ query.id }}").removeClass().
+                                            addClass("btn btn-danger").text("Expired!!  ")
+                                    }
+                                </script>
+                            {% else %}
+                                <button type="button" class="btn btn-succes">Completed!!</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    <script>
+        $(document).ready( function () {
+            $('#view_data').DataTable({
+                paging: false,
+                searching: false
+            });
+        } );
+
+        $('.completeMe').on('click', function(){
+            queryId = this.id;
+            // $('#' + queryId).removeClass("completeMe btn btn-outline-success").
+            // addClass("btn btn-outline-success").text("Completed!!");
+            $.ajax({
+                url : "{% url 'task_list:mark_me_complete' %}",
+                method : "POST",
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    id: queryId
+                },
+                success: (res) => {
+                    location.reload();
+                }
+            })
+
+        })
+    </script>
+{% endblock %}
